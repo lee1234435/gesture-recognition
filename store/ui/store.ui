@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>914</width>
+    <height>553</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -35,7 +35,7 @@
      <rect>
       <x>170</x>
       <y>20</y>
-      <width>112</width>
+      <width>131</width>
       <height>23</height>
      </rect>
     </property>
@@ -43,26 +43,13 @@
      <string>메뉴별 판매 기록</string>
     </property>
    </widget>
-   <widget class="QRadioButton" name="stockRBtn">
-    <property name="geometry">
-     <rect>
-      <x>290</x>
-      <y>20</y>
-      <width>112</width>
-      <height>23</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>재고</string>
-    </property>
-   </widget>
    <widget class="QStackedWidget" name="stackedWidget">
     <property name="geometry">
      <rect>
-      <x>30</x>
-      <y>100</y>
-      <width>561</width>
-      <height>381</height>
+      <x>20</x>
+      <y>70</y>
+      <width>521</width>
+      <height>321</height>
      </rect>
     </property>
     <property name="currentIndex">
@@ -75,7 +62,7 @@
         <x>10</x>
         <y>60</y>
         <width>531</width>
-        <height>291</height>
+        <height>331</height>
        </rect>
       </property>
       <column>
@@ -118,6 +105,32 @@
       </property>
       <property name="calendarPopup">
        <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit">
+      <property name="geometry">
+       <rect>
+        <x>290</x>
+        <y>20</y>
+        <width>211</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_2">
+      <property name="geometry">
+       <rect>
+        <x>230</x>
+        <y>20</y>
+        <width>67</width>
+        <height>17</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>총 매출 : </string>
       </property>
      </widget>
     </widget>
@@ -176,27 +189,144 @@
      </widget>
     </widget>
     <widget class="QWidget" name="page_3">
-     <widget class="QTableWidget" name="stockTable">
+     <widget class="QLabel" name="graphPixmap">
       <property name="geometry">
        <rect>
         <x>60</x>
-        <y>30</y>
-        <width>441</width>
-        <height>291</height>
+        <y>50</y>
+        <width>361</width>
+        <height>251</height>
        </rect>
       </property>
-      <column>
-       <property name="text">
-        <string>메뉴</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>재고</string>
-       </property>
-      </column>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_5">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>10</y>
+        <width>89</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>요일별</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_6">
+      <property name="geometry">
+       <rect>
+        <x>220</x>
+        <y>10</y>
+        <width>89</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>월별</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_7">
+      <property name="geometry">
+       <rect>
+        <x>120</x>
+        <y>10</y>
+        <width>89</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>주별</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_8">
+      <property name="geometry">
+       <rect>
+        <x>320</x>
+        <y>10</y>
+        <width>89</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>시댄대별</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="calendarWidget">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>40</y>
+        <width>471</width>
+        <height>261</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>TextLabel</string>
+      </property>
      </widget>
     </widget>
+   </widget>
+   <widget class="QPushButton" name="robotManageBtn">
+    <property name="geometry">
+     <rect>
+      <x>600</x>
+      <y>20</y>
+      <width>89</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>로봇 관리</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>610</x>
+      <y>60</y>
+      <width>67</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>재고</string>
+    </property>
+   </widget>
+   <widget class="QTableWidget" name="stockTable">
+    <property name="geometry">
+     <rect>
+      <x>610</x>
+      <y>90</y>
+      <width>211</width>
+      <height>301</height>
+     </rect>
+    </property>
+    <column>
+     <property name="text">
+      <string>메뉴</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>재고</string>
+     </property>
+    </column>
+   </widget>
+   <widget class="QRadioButton" name="salesGraphRBtn">
+    <property name="geometry">
+     <rect>
+      <x>310</x>
+      <y>20</y>
+      <width>112</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>매출</string>
+    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -204,7 +334,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>914</width>
      <height>22</height>
     </rect>
    </property>

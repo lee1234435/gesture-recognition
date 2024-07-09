@@ -65,6 +65,24 @@ class DatabaseManager:
         except Error as e:
             print(f"Error : '{e}' occurred")
 
+    def getDaillySales(self, year, month):
+        if self.connection is None or not self.connection.is_connected():
+            print("Not connected to the database")
+            return []
+
+        query = """
+        SELECT DATE(order_datetime) as order_date, SUM(price * quantity) as total_sales
+        FROM sales
+        WHERE Year(order_datetime) = %s and MONTH(order_datetime) = %s
+        GROUP BY order_date
+        ORDER BY order_date
+        """
+        cursor = self.connection.cursor()
+        cursor.execute(query, (year, month))
+        result = cursor.fetchall()
+        cursor.close()
+        return result
+
 
 #테스트용
 if __name__ == "__main__":
@@ -82,9 +100,13 @@ if __name__ == "__main__":
         # for sale in daily_sales:
         #     print(sale)
 
-        date = datetime.now()
-        data = [date, 2, 1, 3000, 'F', 10]
-        db_manager.insertSalesTable(data)
+        # date = datetime.now()
+        # data = [date, 2, 1, 3000, 'F', 10]
+        # db_manager.insertSalesTable(data)
+
+        data = db_manager.getDailySales("2024", "07")
+        print(data)
+
     finally:
         db_manager.disconnect()
     
