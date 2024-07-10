@@ -13,19 +13,6 @@
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <widget class="QLineEdit" name="dateLine">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>10</y>
-     <width>211</width>
-     <height>25</height>
-    </rect>
-   </property>
-   <property name="readOnly">
-    <bool>true</bool>
-   </property>
-  </widget>
   <widget class="QStackedWidget" name="stackedWidget">
    <property name="geometry">
     <rect>
@@ -36,7 +23,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="page">
     <widget class="QTableWidget" name="dailySalesTable">
@@ -77,9 +64,9 @@
     <widget class="QLineEdit" name="totalSalesLine">
      <property name="geometry">
       <rect>
-       <x>290</x>
+       <x>330</x>
        <y>10</y>
-       <width>211</width>
+       <width>191</width>
        <height>25</height>
       </rect>
      </property>
@@ -90,7 +77,7 @@
     <widget class="QLabel" name="totalSalesLabel">
      <property name="geometry">
       <rect>
-       <x>230</x>
+       <x>260</x>
        <y>10</y>
        <width>67</width>
        <height>17</height>
@@ -101,7 +88,21 @@
      </property>
     </widget>
    </widget>
-   <widget class="QWidget" name="page_2"/>
+   <widget class="QWidget" name="page_2">
+    <widget class="QLabel" name="menuSalesGraph">
+     <property name="geometry">
+      <rect>
+       <x>40</x>
+       <y>50</y>
+       <width>401</width>
+       <height>271</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </widget>
   </widget>
   <widget class="QRadioButton" name="dailySalesRBtn">
    <property name="geometry">
@@ -127,6 +128,19 @@
    </property>
    <property name="text">
     <string>메뉴별</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="dateLabel">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>20</y>
+     <width>171</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>TextLabel</string>
    </property>
   </widget>
  </widget>

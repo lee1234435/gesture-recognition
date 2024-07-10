@@ -26,7 +26,7 @@
     <string>Login</string>
    </property>
   </widget>
-  <widget class="QLabel" name="ipLabel">
+  <widget class="QLabel" name="hostLabel">
    <property name="geometry">
     <rect>
      <x>20</x>
@@ -36,7 +36,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>IP</string>
+    <string>Host</string>
    </property>
   </widget>
   <widget class="QLabel" name="portLabel">
@@ -52,7 +52,7 @@
     <string>Port</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="ipLineEdit">
+  <widget class="QLineEdit" name="hostLine">
    <property name="geometry">
     <rect>
      <x>110</x>
@@ -65,7 +65,7 @@
     <string/>
    </property>
   </widget>
-  <widget class="QLineEdit" name="portLineEdit">
+  <widget class="QLineEdit" name="portLine">
    <property name="geometry">
     <rect>
      <x>110</x>

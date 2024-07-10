@@ -30,23 +30,6 @@ class DatabaseManager:
             self.connection = None
             print("Disconnect")
 
-    def getDailySales(self, date):
-        if self.connection is None:
-            print("Not connected yet!")
-        else:
-            cursor = self.connection.cursor()
-            query = """
-            SELECT s.order_id, TIME(s.order_datetime) AS order_time, m.menu, s.quantity, s.price
-            FROM sales s
-            JOIN menu m ON s.menu_id = m.id
-            WHERE DATE(s.order_datetime) = %s
-            """
-            cursor.execute(query, (date,))
-            result = cursor.fetchall()
-            cursor.close()
-
-            return result
-        
     def insertSalesTable(self, data):
         if self.connection is None:
             print("Not connected yet!")
@@ -65,10 +48,27 @@ class DatabaseManager:
         except Error as e:
             print(f"Error : '{e}' occurred")
 
+    def getDailySales(self, date):
+        if self.connection is None:
+            print("Not connected yet!")
+        else:
+            cursor = self.connection.cursor()
+            query = """
+            SELECT s.order_id, TIME(s.order_datetime) AS order_time, m.menu, s.quantity, s.price
+            FROM sales s
+            JOIN menu m ON s.menu_id = m.id
+            WHERE DATE(s.order_datetime) = %s
+            """
+            cursor.execute(query, (date,))
+            result = cursor.fetchall()
+            cursor.close()
+
+            return result
+        
     def getDailyTotalSales(self, year, month):
         if self.connection is None or not self.connection.is_connected():
             print("Not connected to the database")
-            return []
+            return
 
         query = """
         SELECT DATE(order_datetime) as date, SUM(price * quantity) as total_sales
@@ -82,7 +82,56 @@ class DatabaseManager:
         result = cursor.fetchall()
         cursor.close()
         return result
+    
+    def getMonthTotalSales(self, year, month):
+        if self.connection is None or not self.connection.is_connected():
+            print("Not connected to the database")
+            return
 
+        query = """
+        SELECT SUM(price * quantity) as total_sales
+        FROM sales
+        WHERE Year(order_datetime) = %s AND MONTH(order_datetime) = %s
+        """
+        cursor = self.connection.cursor()
+        cursor.execute(query, (year, month))
+        result = cursor.fetchall()
+        cursor.close()
+        return result
+    
+    def getStock(self):
+        if self.connection is None or not self.connection.is_connected():
+            print("Not connected to the database")
+            return
+
+        query = """
+        SELECT menu, stock
+        FROM menu
+        """
+
+        cursor = self.connection.cursor()
+        cursor.execute(query)
+        result = cursor.fetchall()
+        cursor.close()
+        return result
+    
+    def getMenuSales(self, date):
+        if self.connection is None or not self.connection.is_connected():
+            print("Not connected to the database")
+            return
+
+        query = """
+        SELECT m.menu, SUM(s.quantity) as total_quantity
+        FROM sales as s
+        JOIN menu m ON s.menu_id = m.id
+        WHERE DATE(order_datetime) = %s
+        GROUP BY m.menu
+        """
+        cursor = self.connection.cursor()
+        cursor.execute(query, (date,))
+        result = cursor.fetchall()
+        cursor.close()
+        return result
 
 #테스트용
 if __name__ == "__main__":
@@ -100,12 +149,12 @@ if __name__ == "__main__":
         # for sale in daily_sales:
         #     print(sale)
 
-        # date = datetime.now()
-        # data = [date, 2, 1, 3000, 'F', 10]
-        # db_manager.insertSalesTable(data)
+        date = datetime.now()
+        data = [date, 4, 1, 4000, 'M', 10]
+        db_manager.insertSalesTable(data)
 
-        data = db_manager.getDailySales("2024", "07")
-        print(data)
+        # data = db_manager.getDailySales("2024", "07")
+        # print(data)
 
     finally:
         db_manager.disconnect()
