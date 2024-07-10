@@ -251,10 +251,10 @@
        </rect>
       </property>
       <property name="text">
-       <string>시댄대별</string>
+       <string>시간대별</string>
       </property>
      </widget>
-     <widget class="QLabel" name="calendarWidget">
+     <widget class="QLabel" name="calendarLabel">
       <property name="geometry">
        <rect>
         <x>20</x>
@@ -264,7 +264,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>TextLabel</string>
+       <string/>
       </property>
      </widget>
     </widget>
@@ -315,7 +315,7 @@
      </property>
     </column>
    </widget>
-   <widget class="QRadioButton" name="salesGraphRBtn">
+   <widget class="QRadioButton" name="salesCalendarRBtn">
     <property name="geometry">
      <rect>
       <x>310</x>

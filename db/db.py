@@ -65,17 +65,17 @@ class DatabaseManager:
         except Error as e:
             print(f"Error : '{e}' occurred")
 
-    def getDaillySales(self, year, month):
+    def getDailyTotalSales(self, year, month):
         if self.connection is None or not self.connection.is_connected():
             print("Not connected to the database")
             return []
 
         query = """
-        SELECT DATE(order_datetime) as order_date, SUM(price * quantity) as total_sales
+        SELECT DATE(order_datetime) as date, SUM(price * quantity) as total_sales
         FROM sales
         WHERE Year(order_datetime) = %s and MONTH(order_datetime) = %s
-        GROUP BY order_date
-        ORDER BY order_date
+        GROUP BY date
+        ORDER BY date
         """
         cursor = self.connection.cursor()
         cursor.execute(query, (year, month))
