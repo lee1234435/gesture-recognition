@@ -1,13 +1,9 @@
 import sys
 import os
-import matplotlib.pyplot as plt
-import koreanize_matplotlib
-from matplotlib.ticker import MaxNLocator
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5.QtWidgets import *
 from PyQt5 import uic
 from PyQt5.QtCore import QDateTime, QDate, Qt, QRect,  pyqtSignal
-from PyQt5.QtGui import QTextCharFormat, QColor, QFont, QPainter, QPixmap, QImage
+from PyQt5.QtGui import QTextCharFormat, QColor, QFont, QPainter, QPixmap, QImage, QPen
 import time
 import socket
 import threading
@@ -32,7 +28,6 @@ class Calendar(QCalendarWidget):
         self.salesRecords = {}
         self.initWindow()
 
-
     def initWindow(self):
         self.clicked.connect(self.handleClick)
 
@@ -45,7 +40,7 @@ class Calendar(QCalendarWidget):
         
         if date in self.salesRecords:
             painter.save()
-            painter.setPen(QColor(0, 255, 0))
+            painter.setPen(QColor(0, 100, 0))
             painter.setFont(QFont("Arial", 8, QFont.Bold))
             textRect = QRect(rect.left(), rect.top() + 25, rect.width(), rect.height() - 20)
             painter.drawText(textRect, Qt.AlignCenter, self.salesRecords[date])
@@ -150,8 +145,8 @@ class MainPage(QMainWindow, mainClass):
         year = str(self.calendarWidget.yearShown())
         month = str(self.calendarWidget.monthShown())
         result = self.dbManager.getMonthTotalSales(year, month)
-        monthTotalSales = str(result[0][0])
-        self.totalSalesLine.setText(f"{monthTotalSales}원")
+        monthTotalSales = result[0][0]
+        self.totalSalesLine.setText(f"{monthTotalSales:,}원")
         self.totalSalesLine.setAlignment(Qt.AlignRight)
 
     def updateDailyTotalSales(self):
@@ -164,7 +159,7 @@ class MainPage(QMainWindow, mainClass):
             date = result[0]  # datetime.date 객체
             totalSales = result[1]  # Decimal 객체
             qdate = QDate(date.year, date.month, date.day)
-            salesRecords[qdate] = f"{totalSales}원"
+            salesRecords[qdate] = f"{totalSales:,}원"
         self.calendarWidget.setDailyTotalSales(salesRecords)
 
     def updateStock(self):
@@ -199,6 +194,7 @@ class DailySalesPage(QDialog, dailySalesClass):
     def initWindow(self):
         self.dailySalesRBtn.toggled.connect(self.showDailySales) # 일별 판매 기록 버튼 연결
         self.menuSalesRBtn.toggled.connect(self.showMenuSales) # 메뉴별 판매 기록 버튼 연결
+        self.timeSalesRBtn.toggled.connect(self.showTimeSales)
         self.dailySalesRBtn.setChecked(True) # 일별 판매 기록 버튼 활성화
         self.dailySalesTable.verticalHeader().setVisible(False) #일별 판매 기록 테이블의 왼쪽의 번호 비활성화
         self.showDailySales() # 처음에 일별 판매 기록 테이블이 보이게 설정
@@ -221,7 +217,7 @@ class DailySalesPage(QDialog, dailySalesClass):
         self.updateTotalSales(totalSales)
 
     def updateTotalSales(self, totalSales):
-        self.totalSalesLine.setText(f"{str(totalSales)}원")
+        self.totalSalesLine.setText(f"{totalSales:,}원")
         self.totalSalesLine.setAlignment(Qt.AlignRight)
 
     def updateDailySales(self):
@@ -230,23 +226,27 @@ class DailySalesPage(QDialog, dailySalesClass):
         # Update the table with daily sales data
         self.updateTable(dailySales)
 
-    def showMenuSales(self):
-        if self.menuSalesRBtn.isChecked():
-            self.stackedWidget.setCurrentIndex(1)
-            self.drawBarGraph()
-
     def showDailySales(self):
         if self.dailySalesRBtn.isChecked():
             self.stackedWidget.setCurrentIndex(0)
             self.dailySalesTable.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
             self.updateDailySales()
+
+    def showMenuSales(self):
+        if self.menuSalesRBtn.isChecked():
+            self.stackedWidget.setCurrentIndex(1)
+            self.drawBarGraph()
+
+    def showTimeSales(self):
+        if self.timeSalesRBtn.isChecked():
+            self.stackedWidget.setCurrentIndex(2)
     
     def drawBarGraph(self):
         date = self.date.toString('yyyy-MM-dd')  # QDate를 문자열로 변환
         menuSales = self.dbManager.getMenuSales(date)
 
         # 전체 메뉴 목록 (예시)
-        all_menu_items = ['딸기', '바나나', '초코', '아포카토']
+        all_menu_items = ['딸기', '바나나', '초코', '아포가토']
 
         # 모든 메뉴에 대해 판매량을 0으로 초기화
         sales_dict = {item: 0 for item in all_menu_items}
@@ -258,28 +258,63 @@ class DailySalesPage(QDialog, dailySalesClass):
         menuItems = list(sales_dict.keys())
         sales = list(sales_dict.values())
 
+        # QImage 생성
+        width, height = self.menuSalesGraph.width(), self.menuSalesGraph.height()
+        image = QImage(width, height, QImage.Format_ARGB32)
+        image.fill(Qt.white)
 
-        width, height = self.menuSalesGraph.width() / 100, self.menuSalesGraph.height() / 100
-        # Matplotlib을 사용하여 그래프 그리기
-        fig, ax = plt.subplots(figsize=(width, height))
-        fig.subplots_adjust(top=0.85, bottom=0.15)  # 그래프 여백 조정
-        ax.bar(menuItems, sales, color='skyblue')
-        ax.set_xlabel('메뉴')
-        ax.set_ylabel('판매량')
-        ax.set_title('메뉴별 일일 판매량')
+        # QPainter로 QImage에 그리기
+        painter = QPainter(image)
+        painter.setRenderHint(QPainter.Antialiasing)
 
-        ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+        # 그래프 영역 정의
+        margin = 50
+        graph_width = width - 2 * margin
+        graph_height = height - 2 * margin
 
-        # Matplotlib Figure를 QPixmap으로 변환
-        buf = io.BytesIO()
-        fig.savefig(buf, format='png', bbox_inches='tight', pad_inches=0.1)
-        buf.seek(0)
-        img = QImage.fromData(buf.getvalue())
-        pixmap = QPixmap.fromImage(img)
+        # 최대 판매량 구하기
+        max_sales = max(sales, default=1)
 
-        # QLabel에 QPixmap 설정
+        # 각 메뉴에 대한 색상 정의
+        colors = {
+            '딸기': QColor('#FF6347'),  # 토마토 레드
+            '바나나': QColor('#FFD700'),  # 골드
+            '초코': QColor('#8B4513'),  # 새들 브라운
+            '아포가토': QColor('#6F4E37')  # 커피 색
+        }
+
+        # 막대 그리기
+        bar_width = graph_width / len(menuItems)
+        for i, (menu, sale) in enumerate(zip(menuItems, sales)):
+            x = margin + int(i * bar_width)
+            y = height - margin - int(sale / max_sales * graph_height)
+            painter.setBrush(colors[menu])
+            painter.drawRect(int(x), int(y), int(bar_width * 0.8), int(height - margin - y))
+
+            # 막대 위에 텍스트 추가
+            painter.setPen(Qt.black)
+            painter.setFont(QFont('Arial', 10))
+            painter.drawText(int(x + bar_width * 0.4), int(y - 10), str(sale))
+
+            # 메뉴 라벨 추가
+            painter.setFont(QFont('Arial', 10, QFont.Bold))
+            painter.drawText(int(x + bar_width * 0.4) - 10, int(height - margin + 20), menu)
+
+        # 축 그리기
+        pen = QPen(Qt.black, 2)
+        painter.setPen(pen)
+        painter.drawLine(margin, height - margin, width - margin, height - margin)  # X 축
+        painter.drawLine(margin, margin, margin, height - margin)  # Y 축
+
+        # 제목 그리기
+        painter.setFont(QFont('Arial', 14, QFont.Bold))
+        painter.drawText(int(width / 2 - 50), margin - 25, '메뉴별 일일 판매량')
+
+        painter.end()
+
+        # QImage를 QPixmap으로 변환하여 QLabel에 설정
+        pixmap = QPixmap.fromImage(image)
         self.menuSalesGraph.setPixmap(pixmap)
-        plt.close(fig)  # Matplotlib figure 닫기
 
 
 

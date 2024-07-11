@@ -23,7 +23,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>2</number>
    </property>
    <widget class="QWidget" name="page">
     <widget class="QTableWidget" name="dailySalesTable">
@@ -92,10 +92,25 @@
     <widget class="QLabel" name="menuSalesGraph">
      <property name="geometry">
       <rect>
-       <x>40</x>
+       <x>20</x>
+       <y>10</y>
+       <width>481</width>
+       <height>331</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="page_3">
+    <widget class="QLabel" name="timeSalesGraph">
+     <property name="geometry">
+      <rect>
+       <x>50</x>
        <y>50</y>
-       <width>401</width>
-       <height>271</height>
+       <width>431</width>
+       <height>281</height>
       </rect>
      </property>
      <property name="text">
@@ -140,7 +155,20 @@
     </rect>
    </property>
    <property name="text">
-    <string>TextLabel</string>
+    <string/>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="timeSalesRBtn">
+   <property name="geometry">
+    <rect>
+     <x>470</x>
+     <y>10</y>
+     <width>112</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>시간대별</string>
    </property>
   </widget>
  </widget>
