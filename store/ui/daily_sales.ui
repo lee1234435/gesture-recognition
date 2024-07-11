@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>594</width>
-    <height>435</height>
+    <width>703</width>
+    <height>478</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,7 +23,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>2</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="page">
     <widget class="QTableWidget" name="dailySalesTable">
@@ -32,7 +32,7 @@
        <x>10</x>
        <y>40</y>
        <width>511</width>
-       <height>321</height>
+       <height>331</height>
       </rect>
      </property>
      <column>
@@ -48,6 +48,11 @@
      <column>
       <property name="text">
        <string>메뉴</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>토핑</string>
       </property>
      </column>
      <column>
@@ -119,32 +124,6 @@
     </widget>
    </widget>
   </widget>
-  <widget class="QRadioButton" name="dailySalesRBtn">
-   <property name="geometry">
-    <rect>
-     <x>270</x>
-     <y>10</y>
-     <width>112</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>판매 기록</string>
-   </property>
-  </widget>
-  <widget class="QRadioButton" name="menuSalesRBtn">
-   <property name="geometry">
-    <rect>
-     <x>400</x>
-     <y>10</y>
-     <width>112</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>메뉴별</string>
-   </property>
-  </widget>
   <widget class="QLabel" name="dateLabel">
    <property name="geometry">
     <rect>
@@ -155,21 +134,41 @@
     </rect>
    </property>
    <property name="text">
-    <string/>
+    <string>날짜</string>
    </property>
   </widget>
-  <widget class="QRadioButton" name="timeSalesRBtn">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>470</x>
+     <x>270</x>
      <y>10</y>
-     <width>112</width>
-     <height>23</height>
+     <width>246</width>
+     <height>31</height>
     </rect>
    </property>
-   <property name="text">
-    <string>시간대별</string>
-   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <item>
+     <widget class="QRadioButton" name="dailySalesRBtn">
+      <property name="text">
+       <string>판매 기록</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QRadioButton" name="menuSalesRBtn">
+      <property name="text">
+       <string>메뉴별</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QRadioButton" name="timeSalesRBtn">
+      <property name="text">
+       <string>시간대별</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
   </widget>
  </widget>
  <resources/>

@@ -17,10 +17,10 @@
    <widget class="QPushButton" name="robotManageBtn">
     <property name="geometry">
      <rect>
-      <x>800</x>
+      <x>690</x>
       <y>20</y>
-      <width>89</width>
-      <height>25</height>
+      <width>111</width>
+      <height>31</height>
      </rect>
     </property>
     <property name="text">
@@ -38,39 +38,6 @@
     </property>
     <property name="text">
      <string>매출 :</string>
-    </property>
-   </widget>
-   <widget class="QTableWidget" name="stockTable">
-    <property name="geometry">
-     <rect>
-      <x>610</x>
-      <y>90</y>
-      <width>211</width>
-      <height>311</height>
-     </rect>
-    </property>
-    <column>
-     <property name="text">
-      <string>메뉴</string>
-     </property>
-    </column>
-    <column>
-     <property name="text">
-      <string>재고</string>
-     </property>
-    </column>
-   </widget>
-   <widget class="QLabel" name="stockLabel">
-    <property name="geometry">
-     <rect>
-      <x>610</x>
-      <y>60</y>
-      <width>67</width>
-      <height>17</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>재고</string>
     </property>
    </widget>
    <widget class="QWidget" name="calendarContainer" native="true">
@@ -95,6 +62,142 @@
     <property name="readOnly">
      <bool>true</bool>
     </property>
+   </widget>
+   <widget class="QWidget" name="">
+    <property name="geometry">
+     <rect>
+      <x>560</x>
+      <y>90</y>
+      <width>162</width>
+      <height>285</height>
+     </rect>
+    </property>
+    <layout class="QFormLayout" name="formLayout">
+     <item row="0" column="0">
+      <widget class="QLabel" name="stockLabel">
+       <property name="font">
+        <font>
+         <pointsize>15</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>재고</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QPushButton" name="modifyBtn">
+       <property name="text">
+        <string>수정</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="strawberryLabel">
+       <property name="font">
+        <font>
+         <pointsize>15</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>딸기</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QSpinBox" name="strawberrySpinBox"/>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="bananaLabel">
+       <property name="font">
+        <font>
+         <pointsize>15</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>바나나</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QSpinBox" name="bananaSpinBox"/>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="chocolateLabel">
+       <property name="font">
+        <font>
+         <pointsize>15</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>초코</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QSpinBox" name="chocolateSpinBox"/>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="affogatoLabel">
+       <property name="font">
+        <font>
+         <pointsize>15</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>아포가토</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QSpinBox" name="affogatoSpinBox"/>
+     </item>
+     <item row="5" column="0">
+      <widget class="QLabel" name="toppingALabel">
+       <property name="font">
+        <font>
+         <pointsize>15</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>토핑A</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1">
+      <widget class="QSpinBox" name="toppingASpinBox"/>
+     </item>
+     <item row="6" column="0">
+      <widget class="QLabel" name="toppingBLabel">
+       <property name="font">
+        <font>
+         <pointsize>15</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>토핑B</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="1">
+      <widget class="QSpinBox" name="toppingBSpinBox"/>
+     </item>
+     <item row="7" column="0">
+      <widget class="QLabel" name="toppingCLabel">
+       <property name="font">
+        <font>
+         <pointsize>15</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>토핑C</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="1">
+      <widget class="QSpinBox" name="toppingCSpinBox"/>
+     </item>
+    </layout>
    </widget>
   </widget>
  </widget>

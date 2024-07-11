@@ -104,20 +104,41 @@ class MainPage(QMainWindow, mainClass):
 
     def initWindow(self):
         self.robotManageWindow = RobotManagePage(self.sock)
+        self.setSpinBoxesEnabled(False)
+        self.initializeCalendar()
+
+        self.modifyBtn.clicked.connect(self.modifyBtnClicked)
 
         self.robotManageBtn.clicked.connect(self.showRobotManagePage)
-        self.stockTable.verticalHeader().setVisible(False) #일별 판매 기록 테이블의 왼쪽의 번호 비활성화
-        self.stockTable.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.updateData()
+        self.startReceiveThread()
+
+
+    def startReceiveThread(self):
+        self.receiveThread = threading.Thread(target= self.recieveMessages)
+        self.receiveThread.daemon = True
+        self.receiveThread.start()
+
+
+    def initializeCalendar(self):
         self.calendarContainer = self.findChild(QWidget, "calendarContainer")  # 디자이너에서 설정한 이름 사용
         self.calendarLayout = QVBoxLayout(self.calendarContainer)
         self.calendarWidget = Calendar(self.calendarContainer)
         self.calendarLayout.addWidget(self.calendarWidget)
         self.calendarWidget.dateClicked.connect(self.showDailySalesPage)
-        self.updateData()
 
-        self.receiveThread = threading.Thread(target= self.recieveMessages)
-        self.receiveThread.daemon = True
-        self.receiveThread.start()
+    def setSpinBoxesEnabled(self, enabled):
+        spinBoxes = [
+            self.strawberrySpinBox,
+            self.bananaSpinBox,
+            self.chocolateSpinBox,
+            self.affogatoSpinBox,
+            self.toppingASpinBox,
+            self.toppingBSpinBox,
+            self.toppingCSpinBox
+        ]
+        for spinBox in spinBoxes:
+            spinBox.setEnabled(enabled)
 
     def sendMessage(self):
         message = "test"
@@ -164,16 +185,69 @@ class MainPage(QMainWindow, mainClass):
 
     def updateStock(self):
         data = self.dbManager.getStock()
-        self.stockTable.setRowCount(len(data))
-        for row_num, row_data in enumerate(data):
-            for col_num, item in enumerate(row_data):
-                if col_num == 1:
-                    formatted_item = f"{int(item)}개"
-                    table_item = QTableWidgetItem(formatted_item)
-                else:
-                    table_item = QTableWidgetItem(str(item))
-                table_item.setTextAlignment(Qt.AlignCenter)  # 가운데 정렬
-                self.stockTable.setItem(row_num, col_num, table_item)
+
+        spinBoxMapping = {
+            "딸기" : self.strawberrySpinBox,
+            "바나나" : self.bananaSpinBox,
+            "초코" : self.chocolateSpinBox,
+            "아포가토" : self.affogatoSpinBox,
+            "토핑A" : self.toppingASpinBox,
+            "토핑B" : self.toppingBSpinBox,
+            "토핑C" : self.toppingCSpinBox,
+        }
+
+        for itemName, itemStock in data:
+            if itemName in spinBoxMapping:
+                spinBoxMapping[itemName].setValue(itemStock)
+
+        # for row_data in data:
+        #     item_name = row_data[0]
+        #     item_stock = row_data[1]
+        #     if item_name == "딸기":
+        #         self.strawberrySpinBox.setValue(item_stock)
+        #     elif item_name == "바나나":
+        #         self.bananaSpinBox.setValue(item_stock)
+        #     elif item_name == "초코":
+        #         self.chocolateSpinBox.setValue(item_stock)
+        #     elif item_name == "아포가토":
+        #         self.affogatoSpinBox.setValue(item_stock)
+        #     elif item_name == "토핑A":
+        #         self.toppingASpinBox.setValue(item_stock)
+        #     elif item_name == "토핑B":
+        #         self.toppingBSpinBox.setValue(item_stock)
+        #     elif item_name == "토핑C":
+        #         self.toppingCSpinBox.setValue(item_stock)
+
+    def modifyBtnClicked(self):
+        text = self.modifyBtn.text()
+        if text == "수정":
+            self.setSpinBoxesEnabled(True)
+            self.modifyBtn.setText("저장")
+        elif text == "저장":
+            self.modifyStock()
+            self.setSpinBoxesEnabled(True)
+            self.modifyBtn.setText("수정")
+    
+    def modifyStock(self):
+        strawberryStock = self.strawberrySpinBox.value()
+        bananaStock = self.bananaSpinBox.value()
+        chocolateStock = self.chocolateSpinBox.value()
+        affogatoStock = self.affogatoSpinBox.value()
+        menuData = [
+            ("딸기", strawberryStock),
+            ("바나나", bananaStock),
+            ("초코", chocolateStock),
+            ("아포가토", affogatoStock)
+        ]
+        toppingAStock = self.toppingASpinBox.value()
+        toppingBStock = self.toppingBSpinBox.value()
+        toppingCStock = self.toppingCSpinBox.value()
+        toppingData = [
+            ("토핑A", toppingAStock),
+            ("토핑B", toppingBStock),
+            ("토핑C", toppingCStock)
+        ]
+        self.dbManager.updateStock(menuData,toppingData)
 
     def showDailySalesPage(self, date):
         self.dailySalesWindow = DailySalesPage(self.dbManager, date)
@@ -205,15 +279,12 @@ class DailySalesPage(QDialog, dailySalesClass):
 
     def updateTable(self, data):
         self.dailySalesTable.setRowCount(len(data))
-        totalSales = 0
+        totalSales = sum(row_data[5] for row_data in data)
         for row_num, row_data in enumerate(data):
             for col_num, item in enumerate(row_data):
                 table_item = QTableWidgetItem(str(item))
                 table_item.setTextAlignment(Qt.AlignCenter)  # 가운데 정렬
                 self.dailySalesTable.setItem(row_num, col_num, table_item)
-                if col_num == 4:
-                    totalSales += int(item)
-        
         self.updateTotalSales(totalSales)
 
     def updateTotalSales(self, totalSales):
@@ -315,10 +386,6 @@ class DailySalesPage(QDialog, dailySalesClass):
         # QImage를 QPixmap으로 변환하여 QLabel에 설정
         pixmap = QPixmap.fromImage(image)
         self.menuSalesGraph.setPixmap(pixmap)
-
-
-
-
 
 class RobotManagePage(QDialog, robotClass):
     def __init__(self, sock):
