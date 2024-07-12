@@ -2,6 +2,37 @@ import mysql.connector
 from mysql.connector import Error
 from datetime import datetime, timedelta
 import random
+import rclpy as rp
+from rclpy.node import Node
+from interface_package.srv import DailyTotalSales
+
+class DataBaseNode(Node):
+    def __init__(self):
+        super().__init__('database_node')
+        self.initDataBase()
+        self.initService()
+
+    def initDataBase(self):
+        self.dbManager = DatabaseManager(
+                host="localhost",
+                user="root",
+                password="amr231218!",
+                database="ArisTeam5"
+            )
+        self.dbManager.connect()
+
+    def initService(self):
+        self.dailyTotalSalesService = self.create_service(DailyTotalSales, "dailyTotalSales", self.dailyTotalSalesCallback)
+
+    
+    def dailyTotalSalesCallback(self, request, response):
+        year = request.year
+        month = request.month
+        self.get_logger().info(f"Get request from dailyTotalSalesClient year : {year}, month : {month}")
+        results = self.dbManager.getDailyTotalSales(year, month)
+        response.data = [f"{result[0]},{result[1]}" for result in results] 
+
+        return response
 
 class DatabaseManager:
     def __init__(self, host, user, password, database):
@@ -170,24 +201,33 @@ class DatabaseManager:
         self._executeQuery(query, fetch=False)
         print("sales 테이블이 초기화되었습니다.")
 
+def main():
+    rp.init(args=None)
+    dbNode = DataBaseNode()
+    rp.spin(dbNode)
+    dbNode.destroy_node()
+    rp.shutdown()
 
-# 테스트용
+
 if __name__ == "__main__":
-    dbManager = DatabaseManager(
-        host="localhost",
-        user="root",
-        password="amr231218!",
-        database="ArisTeam5"
-    )
+    main()
+    
+    # 테스트용
+    # dbManager = DatabaseManager(
+    #     host="localhost",
+    #     user="root",
+    #     password="amr231218!",
+    #     database="ArisTeam5"
+    # )
 
-    try:
-        dbManager.connect()
+    # try:
+    #     dbManager.connect()
 
-        # 덤프 데이터 넣기
-        dbManager.truncateTable()
-        startDate = datetime.strptime('2024-07-04 00:00:00', '%Y-%m-%d %H:%M:%S')
-        endDate = datetime.strptime('2024-07-11 23:59:59', '%Y-%m-%d %H:%M:%S')
-        dbManager.insertDummyData(1000, startDate, endDate)
+    #     # 덤프 데이터 넣기
+    #     dbManager.truncateTable()
+    #     startDate = datetime.strptime('2024-07-04 00:00:00', '%Y-%m-%d %H:%M:%S')
+    #     endDate = datetime.strptime('2024-07-11 23:59:59', '%Y-%m-%d %H:%M:%S')
+    #     dbManager.insertDummyData(1000, startDate, endDate)
 
-    finally:
-        dbManager.disconnect()
+    # finally:
+    #     dbManager.disconnect()

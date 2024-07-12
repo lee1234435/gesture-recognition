@@ -39,17 +39,17 @@
     <string>Host</string>
    </property>
   </widget>
-  <widget class="QLabel" name="portLabel">
+  <widget class="QLabel" name="domainIDLabel">
    <property name="geometry">
     <rect>
      <x>20</x>
      <y>140</y>
-     <width>67</width>
+     <width>71</width>
      <height>17</height>
     </rect>
    </property>
    <property name="text">
-    <string>Port</string>
+    <string>Domain ID</string>
    </property>
   </widget>
   <widget class="QLineEdit" name="hostLine">
@@ -64,8 +64,11 @@
    <property name="text">
     <string/>
    </property>
+   <property name="readOnly">
+    <bool>true</bool>
+   </property>
   </widget>
-  <widget class="QLineEdit" name="portLine">
+  <widget class="QLineEdit" name="domainIDLine">
    <property name="geometry">
     <rect>
      <x>110</x>

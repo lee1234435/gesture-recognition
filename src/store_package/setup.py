@@ -10,6 +10,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('share/' + package_name + '/ui', ['ui/login.ui', 'ui/store.ui', 'ui/robot_manage.ui', 'ui/daily_sales.ui'])
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -20,6 +21,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'store = store_package.store:main'
         ],
     },
 )

@@ -1,26 +1,30 @@
 import sys
 import os
+import glob
 from PyQt5.QtWidgets import *
 from PyQt5 import uic
-from PyQt5.QtCore import QDateTime, QDate, Qt, QRect,  pyqtSignal
+from PyQt5.QtCore import QDateTime, QDate, Qt, QRect, pyqtSignal, QObject, QTimer
 from PyQt5.QtGui import QTextCharFormat, QColor, QFont, QPainter, QPixmap, QImage, QPen
 import time
 import socket
+import netifaces
 import threading
 import io
+
 import rclpy as rp
+from rclpy.node import Node
+from interface_package.srv import DailyTotalSales
 
+uiPath = "/home/addinedu/amr_ws/aris_team5/Aris_Team5/src/store_package/ui"
+loginUi = glob.glob(os.path.join(uiPath, "login.ui"))[0]
+mainUi = glob.glob(os.path.join(uiPath, "store.ui"))[0]
+robotUi = glob.glob(os.path.join(uiPath, "robot_manage.ui"))[0]
+dailySalesUi = glob.glob(os.path.join(uiPath, "daily_sales.ui"))[0]
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../db")))
-
-from db import DatabaseManager
-
-# Load the UI files
-loginClass = uic.loadUiType("../ui/login.ui")[0]
-mainClass = uic.loadUiType("../ui/store.ui")[0]
-robotClass = uic.loadUiType("../ui/robot_manage.ui")[0]
-dailySalesClass = uic.loadUiType("../ui/daily_sales.ui")[0]
-
+loginClass = uic.loadUiType(loginUi)[0]
+mainClass = uic.loadUiType(mainUi)[0]
+robotClass = uic.loadUiType(robotUi)[0]
+dailySalesClass = uic.loadUiType(dailySalesUi)[0]
 
 class Calendar(QCalendarWidget):
     dateClicked = pyqtSignal(QDate)
