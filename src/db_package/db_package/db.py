@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 import random
 import rclpy as rp
 from rclpy.node import Node
-from interface_package.msg import StockInfo, StocksArray, OrderInfo
-from interface_package.srv import DailyTotalSales, MonthTotalSales, Stocks, ModifyStocks, DailySales
+from interface_package.msg import StockInfo, StocksArray, OrderInfo, Item
+from interface_package.srv import DailyTotalSales, MonthTotalSales, Stocks, ModifyStocks, DailySales, MenuDailySales
 
 class DataBaseNode(Node):
     def __init__(self):
@@ -28,6 +28,7 @@ class DataBaseNode(Node):
         self.stocksService = self.create_service(Stocks, "stocks", self.stocksCallback)
         self.modifyStocksService = self.create_service(ModifyStocks, "modifyStocks", self.modifyStocksCallback)
         self.dailySalesService = self.create_service(DailySales, "dailySales", self.dailySalesCallback)
+        self.MenuDailySalesService = self.create_service(MenuDailySales, "menuDailySales", self.menuDailySalesCallback)
 
     def dailyTotalSalesCallback(self, request, response):
         year = request.year
@@ -110,6 +111,22 @@ class DataBaseNode(Node):
             orderInfoList.append(orderInfo)
         
         response.data = orderInfoList
+
+        return response
+
+    def menuDailySalesCallback(self, request, response):
+        year = request.year
+        month = request.month
+        day = request.day
+        date = f"{year:04d}-{month:02d}-{day:02d}"
+
+        self.get_logger().info(f"Get request from menuDailySalesClient - year: {year}, month: {month}, day: {day}")
+
+        results = self.dbManager.getMenuSales(date)
+
+        response.items = [
+            Item(name=row[0], quantity=int(row[1])) for row in results
+        ]
 
         return response
 

@@ -5,15 +5,14 @@ from PyQt5.QtWidgets import *
 from PyQt5 import uic
 from PyQt5.QtCore import QDateTime, QDate, Qt, QRect, QObject, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QColor, QFont, QPainter, QPixmap, QImage, QPen
-import time
 import netifaces
 import threading
-import io
+
 
 import rclpy as rp
 from rclpy.node import Node
 from interface_package.msg import StockInfo, StocksArray, OrderInfo
-from interface_package.srv import DailyTotalSales, MonthTotalSales, Stocks, ModifyStocks, DailySales
+from interface_package.srv import DailyTotalSales, MonthTotalSales, Stocks, ModifyStocks, DailySales, MenuDailySales
 
 #학원
 # uiPath = "/home/addinedu/amr_ws/aris_team5/Aris_Team5/src/store_package/ui"
@@ -35,6 +34,7 @@ class StoreNode(Node, QObject):
     monthTotalSales = pyqtSignal(object)
     stocks = pyqtSignal(object)
     dailySales = pyqtSignal(object)
+    menuDailySales = pyqtSignal(object)
 
     def __init__(self):
         super().__init__("store_node")
@@ -53,6 +53,7 @@ class StoreNode(Node, QObject):
         self.stocksClient = self.create_client(Stocks, 'stocks')
         self.modifyStocksClient = self.create_client(ModifyStocks, 'modifyStocks')
         self.dailySalesClient = self.create_client(DailySales, "dailySales")
+        self.menuDailySalesClient = self.create_client(MenuDailySales, "menuDailySales")
 
     def waitService(self):
         while not self.dailyTotalSalesClient.wait_for_service(timeout_sec=1.0):
@@ -65,6 +66,8 @@ class StoreNode(Node, QObject):
             self.get_logger().info('Modify Stocks service not available, waiting again...')
         while not self.dailySalesClient.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Daily sales service not available, waiting again...')
+        while not self.menuDailySalesClient.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Menu daily sales service not available, waiting again...')
 
     def requestDailyTotalSales(self, year, month):
         request = DailyTotalSales.Request()
@@ -162,6 +165,25 @@ class StoreNode(Node, QObject):
         except Exception as e:
             self.get_logger().error(f"Service call failed: {e}")
 
+    def requestMenuDailySales(self, year, month, day):
+        request = MenuDailySales.Request()
+        request.year = year
+        request.month = month
+        request.day = day
+
+        self.get_logger().info(f"Request to MenuDailySales service - year: {year}, month: {month}, day: {day}")
+
+        future = self.menuDailySalesClient.call_async(request)
+        future.add_done_callback(self.requestMenuDailySalesCallback)
+
+    def requestMenuDailySalesCallback(self, future):
+        try:
+            response = future.result()
+            self.get_logger().info(f"Received response from MenuDailySales service")
+            self.menuDailySales.emit(response.items)
+        except Exception as e:
+            self.get_logger().error(f"Service call failed: {e}")
+
 class Calendar(QCalendarWidget):
     dateClicked = pyqtSignal(QDate)
 
@@ -233,7 +255,6 @@ class MainPage(QMainWindow, mainClass):
         self.setupUi(self)
         self.setWindowTitle("Main")
         self.storeNode = storeNode
-
         self.initWindow()
 
     def initWindow(self):
@@ -243,7 +264,6 @@ class MainPage(QMainWindow, mainClass):
         self.modifyBtn.clicked.connect(self.modifyBtnClicked)
         self.handelqtSignal()
         self.updateData()       
-
 
     def handelqtSignal(self):
         self.storeNode.dailyTotalSales.connect(self.updateDailyTotalSales)
@@ -379,21 +399,33 @@ class DailySalesPage(QDialog, dailySalesClass):
         self.timeSalesRBtn.toggled.connect(self.showTimeSales)
         self.dailySalesRBtn.setChecked(True) # 일별 판매 기록 버튼 활성화
         self.dailySalesTable.verticalHeader().setVisible(False) #일별 판매 기록 테이블의 왼쪽의 번호 비활성화
-        self.showDailySales() # 처음에 일별 판매 기록 테이블이 보이게 설정
-        self.updateSelectedDateLabel(self.date)
         self.handelqtSignal()
         self.updateData()
 
     def updateData(self):
+        self.updateSelectedDateLabel(self.date)
         self.storeNode.requestDailySales(self.year, self.month, self.day)
+        self.storeNode.requestMenuDailySales(self.year, self.month, self.day)
 
-    def handelqtSignal(self):
-        self.storeNode.dailySales.connect(self.updateTable)
-       
     def updateSelectedDateLabel(self, date):
         self.dateLabel.setText(date.toString('yyyy년 MM월 dd일'))
 
+    def handelqtSignal(self):
+        self.storeNode.dailySales.connect(self.setDailySalesData)
+        self.storeNode.menuDailySales.connect(self.setMenuSalesData)
+
     @pyqtSlot(object)
+    def setDailySalesData(self, data):
+        self.dailySales = data
+        if self.dailySalesRBtn.isChecked():
+            self.updateTable(data)
+
+    @pyqtSlot(object)
+    def setMenuSalesData(self, data):
+        self.menuDailySales = data
+        if self.menuSalesRBtn.isChecked():
+            self.drawBarGraph(data)
+
     def updateTable(self, data):
         self.dailySalesTable.setRowCount(len(data))
         totalSales = 0
@@ -421,101 +453,84 @@ class DailySalesPage(QDialog, dailySalesClass):
         self.totalSalesLine.setText(f"{totalSales:,}원")
         self.totalSalesLine.setAlignment(Qt.AlignRight)
 
-    def updateDailySales(self):
-        date = self.date.toPyDate()  # QDateTime을 date 객체로 변환
-        # dailySales = self.dbManager.getDailySales(date)
-        # # Update the table with daily sales data
-        # self.updateTable(dailySales)
-
     def showDailySales(self):
         if self.dailySalesRBtn.isChecked():
             self.stackedWidget.setCurrentIndex(0)
             self.dailySalesTable.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-            self.updateDailySales()
+            self.updateTable(self.dailySales)
 
     def showMenuSales(self):
         if self.menuSalesRBtn.isChecked():
             self.stackedWidget.setCurrentIndex(1)
-            self.drawBarGraph()
+            self.drawBarGraph(self.menuDailySales)
 
     def showTimeSales(self):
         if self.timeSalesRBtn.isChecked():
             self.stackedWidget.setCurrentIndex(2)
     
-    def drawBarGraph(self):
-        date = self.date.toString('yyyy-MM-dd')  # QDate를 문자열로 변환
-        # menuSales = self.dbManager.getMenuSales(date)
+    def drawBarGraph(self, data):
+        sales_dict = {item.name: item.quantity for item in data}
 
-        # # 전체 메뉴 목록 (예시)
-        # all_menu_items = ['딸기', '바나나', '초코', '아포가토']
+        menuItems = list(sales_dict.keys())
+        sales = list(sales_dict.values())
 
-        # # 모든 메뉴에 대해 판매량을 0으로 초기화
-        # sales_dict = {item: 0 for item in all_menu_items}
+        # QImage 생성
+        width, height = self.menuSalesGraph.width(), self.menuSalesGraph.height()
+        image = QImage(width, height, QImage.Format_ARGB32)
+        image.fill(Qt.white)
 
-        # # 판매된 메뉴의 판매량을 업데이트
-        # for item, quantity in menuSales:
-        #     sales_dict[item] = quantity
+        # QPainter로 QImage에 그리기
+        painter = QPainter(image)
+        painter.setRenderHint(QPainter.Antialiasing)
 
-        # menuItems = list(sales_dict.keys())
-        # sales = list(sales_dict.values())
+        # 그래프 영역 정의
+        margin = 50
+        graph_width = width - 2 * margin
+        graph_height = height - 2 * margin
 
-        # # QImage 생성
-        # width, height = self.menuSalesGraph.width(), self.menuSalesGraph.height()
-        # image = QImage(width, height, QImage.Format_ARGB32)
-        # image.fill(Qt.white)
+        # 최대 판매량 구하기
+        max_sales = max(sales, default=1)
 
-        # # QPainter로 QImage에 그리기
-        # painter = QPainter(image)
-        # painter.setRenderHint(QPainter.Antialiasing)
+        # 각 메뉴에 대한 색상 정의
+        colors = {
+            '딸기': QColor('#FF6347'),  # 토마토 레드
+            '바나나': QColor('#FFD700'),  # 골드
+            '초코': QColor('#8B4513'),  # 새들 브라운
+            '아포가토': QColor('#6F4E37')  # 커피 색
+        }
 
-        # # 그래프 영역 정의
-        # margin = 50
-        # graph_width = width - 2 * margin
-        # graph_height = height - 2 * margin
+        # 막대 그리기
+        bar_width = graph_width / len(menuItems)
+        for i, (menu, sale) in enumerate(zip(menuItems, sales)):
+            x = margin + int(i * bar_width)
+            y = height - margin - int(sale / max_sales * graph_height)
+            painter.setBrush(colors[menu])
+            painter.drawRect(int(x), int(y), int(bar_width * 0.8), int(height - margin - y))
 
-        # # 최대 판매량 구하기
-        # max_sales = max(sales, default=1)
+            # 막대 위에 텍스트 추가
+            painter.setPen(Qt.black)
+            painter.setFont(QFont('Arial', 10))
+            painter.drawText(int(x + bar_width * 0.4), int(y - 10), str(sale))
 
-        # # 각 메뉴에 대한 색상 정의
-        # colors = {
-        #     '딸기': QColor('#FF6347'),  # 토마토 레드
-        #     '바나나': QColor('#FFD700'),  # 골드
-        #     '초코': QColor('#8B4513'),  # 새들 브라운
-        #     '아포가토': QColor('#6F4E37')  # 커피 색
-        # }
+            # 메뉴 라벨 추가
+            painter.setFont(QFont('Arial', 10, QFont.Bold))
+            painter.drawText(int(x + bar_width * 0.4) - 10, int(height - margin + 20), menu)
 
-        # # 막대 그리기
-        # bar_width = graph_width / len(menuItems)
-        # for i, (menu, sale) in enumerate(zip(menuItems, sales)):
-        #     x = margin + int(i * bar_width)
-        #     y = height - margin - int(sale / max_sales * graph_height)
-        #     painter.setBrush(colors[menu])
-        #     painter.drawRect(int(x), int(y), int(bar_width * 0.8), int(height - margin - y))
+        # 축 그리기
+        pen = QPen(Qt.black, 2)
+        painter.setPen(pen)
+        painter.drawLine(margin, height - margin, width - margin, height - margin)  # X 축
+        painter.drawLine(margin, margin, margin, height - margin)  # Y 축
 
-        #     # 막대 위에 텍스트 추가
-        #     painter.setPen(Qt.black)
-        #     painter.setFont(QFont('Arial', 10))
-        #     painter.drawText(int(x + bar_width * 0.4), int(y - 10), str(sale))
+        # 제목 그리기
+        painter.setFont(QFont('Arial', 14, QFont.Bold))
+        painter.drawText(int(width / 2 - 50), margin - 25, '메뉴별 일일 판매량')
 
-        #     # 메뉴 라벨 추가
-        #     painter.setFont(QFont('Arial', 10, QFont.Bold))
-        #     painter.drawText(int(x + bar_width * 0.4) - 10, int(height - margin + 20), menu)
+        painter.end()
 
-        # # 축 그리기
-        # pen = QPen(Qt.black, 2)
-        # painter.setPen(pen)
-        # painter.drawLine(margin, height - margin, width - margin, height - margin)  # X 축
-        # painter.drawLine(margin, margin, margin, height - margin)  # Y 축
-
-        # # 제목 그리기
-        # painter.setFont(QFont('Arial', 14, QFont.Bold))
-        # painter.drawText(int(width / 2 - 50), margin - 25, '메뉴별 일일 판매량')
-
-        # painter.end()
-
-        # # QImage를 QPixmap으로 변환하여 QLabel에 설정
-        # pixmap = QPixmap.fromImage(image)
-        # self.menuSalesGraph.setPixmap(pixmap)
+        # QImage를 QPixmap으로 변환하여 QLabel에 설정
+        pixmap = QPixmap.fromImage(image)
+        self.menuSalesGraph.setPixmap(pixmap)
 
 class RobotManagePage(QDialog, robotClass):
     def __init__(self, sock):
