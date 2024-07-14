@@ -1,0 +1,2 @@
+StockInfo[] menu
+StockInfo[] topping

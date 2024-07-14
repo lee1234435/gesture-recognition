@@ -4,7 +4,8 @@ from datetime import datetime, timedelta
 import random
 import rclpy as rp
 from rclpy.node import Node
-from interface_package.srv import DailyTotalSales
+from interface_package.msg import StockInfo, StocksArray
+from interface_package.srv import DailyTotalSales, Stocks, ModifyStocks
 
 class DataBaseNode(Node):
     def __init__(self):
@@ -23,14 +24,44 @@ class DataBaseNode(Node):
 
     def initService(self):
         self.dailyTotalSalesService = self.create_service(DailyTotalSales, "dailyTotalSales", self.dailyTotalSalesCallback)
+        self.stocksService = self.create_service(Stocks, "stocks", self.stocksCallback)
+        self.modifyStocksService = self.create_service(ModifyStocks, "modifyStocks", self.modifyStocksCallback)
 
-    
     def dailyTotalSalesCallback(self, request, response):
         year = request.year
         month = request.month
         self.get_logger().info(f"Get request from dailyTotalSalesClient year : {year}, month : {month}")
         results = self.dbManager.getDailyTotalSales(year, month)
-        response.data = [f"{result[0]},{result[1]}" for result in results] 
+        response.data = [f"{record[0]},{record[1]}" for record in results]
+
+        return response
+    
+    def stocksCallback(self, request, response):
+        self.get_logger().info(f"Get request from stocksClient")
+        menu_result, topping_result = self.dbManager.getStocks()
+        if menu_result is not None and topping_result is not None:
+            menu_items = [StockInfo(name=row[0], stock=row[1]) for row in menu_result]
+            toppings = [StockInfo(name=row[0], stock=row[1]) for row in topping_result]
+            response.stocks = StocksArray(menu=menu_items, topping=toppings)
+        else:
+            response.stocks = StocksArray(menu=[], topping=[])
+
+        self.get_logger().info(f"Sending response with {len(response.stocks.menu)} menu items and {len(response.stocks.topping)} toppings")
+        return response
+
+    def modifyStocksCallback(self, request, response):
+        self.get_logger().info(f"Get request from modifyStocksClient")
+        
+        menuData = [(item.name, item.stock) for item in request.stocks.menu]
+        toppingData = [(item.name, item.stock) for item in request.stocks.topping]
+
+        try:
+            self.dbManager.updateStock(menuData, toppingData)
+            response.success = True
+            self.get_logger().info("Stocks successfully modified in database")
+        except Exception as e:
+            response.success = False
+            self.get_logger().error(f"Failed to modify stocks in database: {e}")
 
         return response
 
@@ -137,14 +168,14 @@ class DatabaseManager:
         """
         return self._executeQuery(query, (year, month), fetch=True)
 
-    def getStock(self):
+    def getStocks(self):
         menuQuery = "SELECT name, stock FROM menu"
         toppingQuery = "SELECT name, stock FROM topping"
 
         menuResult = self._executeQuery(menuQuery, fetch=True)
         toppingResult = self._executeQuery(toppingQuery, fetch=True)
 
-        return menuResult + toppingResult
+        return menuResult, toppingResult
 
     def getMenuSales(self, date):
         query = """
@@ -210,24 +241,24 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # main()
     
-    # 테스트용
-    # dbManager = DatabaseManager(
-    #     host="localhost",
-    #     user="root",
-    #     password="amr231218!",
-    #     database="ArisTeam5"
-    # )
+    # # 테스트용
+    dbManager = DatabaseManager(
+        host="localhost",
+        user="root",
+        password="amr231218!",
+        database="ArisTeam5"
+    )
 
-    # try:
-    #     dbManager.connect()
+    try:
+        dbManager.connect()
 
-    #     # 덤프 데이터 넣기
-    #     dbManager.truncateTable()
-    #     startDate = datetime.strptime('2024-07-04 00:00:00', '%Y-%m-%d %H:%M:%S')
-    #     endDate = datetime.strptime('2024-07-11 23:59:59', '%Y-%m-%d %H:%M:%S')
-    #     dbManager.insertDummyData(1000, startDate, endDate)
+        # 덤프 데이터 넣기
+        dbManager.truncateTable()
+        startDate = datetime.strptime('2024-07-04 00:00:00', '%Y-%m-%d %H:%M:%S')
+        endDate = datetime.strptime('2024-07-14 23:59:59', '%Y-%m-%d %H:%M:%S')
+        dbManager.insertDummyData(1000, startDate, endDate)
 
-    # finally:
-    #     dbManager.disconnect()
+    finally:
+        dbManager.disconnect()
