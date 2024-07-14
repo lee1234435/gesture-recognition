@@ -1,8 +1,5 @@
-int16 order_id
-string order_time
-string menu
-string topping
-int16 quantity
-int16 price
+int16 year
+int16 month
+int16 day
 ---
-bool success
+OrderInfo[] data

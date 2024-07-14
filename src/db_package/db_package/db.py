@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 import random
 import rclpy as rp
 from rclpy.node import Node
-from interface_package.msg import StockInfo, StocksArray
-from interface_package.srv import DailyTotalSales, Stocks, ModifyStocks
+from interface_package.msg import StockInfo, StocksArray, OrderInfo
+from interface_package.srv import DailyTotalSales, MonthTotalSales, Stocks, ModifyStocks, DailySales
 
 class DataBaseNode(Node):
     def __init__(self):
@@ -24,8 +24,10 @@ class DataBaseNode(Node):
 
     def initService(self):
         self.dailyTotalSalesService = self.create_service(DailyTotalSales, "dailyTotalSales", self.dailyTotalSalesCallback)
+        self.monthTotalSalesService = self.create_service(MonthTotalSales, "monthTotalSales", self.monthTotalSalesCallback)
         self.stocksService = self.create_service(Stocks, "stocks", self.stocksCallback)
         self.modifyStocksService = self.create_service(ModifyStocks, "modifyStocks", self.modifyStocksCallback)
+        self.dailySalesService = self.create_service(DailySales, "dailySales", self.dailySalesCallback)
 
     def dailyTotalSalesCallback(self, request, response):
         year = request.year
@@ -36,6 +38,15 @@ class DataBaseNode(Node):
 
         return response
     
+    def monthTotalSalesCallback(self, request, response):
+        year = request.year
+        month = request.month
+        self.get_logger().info(f"Get request from monthTotalSalesClient year : {year}, month : {month}")
+        results = self.dbManager.getMonthTotalSales(year, month)
+        response.total_sales = int(results[0][0])
+
+        return response
+
     def stocksCallback(self, request, response):
         self.get_logger().info(f"Get request from stocksClient")
         menu_result, topping_result = self.dbManager.getStocks()
@@ -62,6 +73,43 @@ class DataBaseNode(Node):
         except Exception as e:
             response.success = False
             self.get_logger().error(f"Failed to modify stocks in database: {e}")
+
+        return response
+
+    def dailySalesCallback(self, request, response):
+        year = request.year
+        month = request.month
+        day = request.day
+        
+        self.get_logger().info(f"Get request from dailySalesClient - year: {year}, month: {month}, day: {day}")
+        date_str = f"{year:04d}-{month:02d}-{day:02d}"
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+        results = self.dbManager.getDailySales(date_obj)
+
+        # response.data = [
+        #     OrderInfo(
+        #         order_id = row[0],
+        #         order_time = row[1],
+        #         menu = row[2],
+        #         topping = row[3],
+        #         quantity = row[4],
+        #         price = row[5],
+        #     ) for row in results
+        #     ] 
+    
+        orderInfoList = []
+        for row in results:
+            orderInfo = OrderInfo(
+                order_id = row[0],
+                order_time =  str(row[1]),
+                menu = row[2],
+                topping = row[3],
+                quantity = row[4],
+                price = row[5],
+            ) 
+            orderInfoList.append(orderInfo)
+        
+        response.data = orderInfoList
 
         return response
 

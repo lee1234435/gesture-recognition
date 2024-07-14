@@ -12,8 +12,8 @@ import io
 
 import rclpy as rp
 from rclpy.node import Node
-from interface_package.msg import StockInfo, StocksArray
-from interface_package.srv import DailyTotalSales, Stocks, ModifyStocks
+from interface_package.msg import StockInfo, StocksArray, OrderInfo
+from interface_package.srv import DailyTotalSales, MonthTotalSales, Stocks, ModifyStocks, DailySales
 
 #학원
 # uiPath = "/home/addinedu/amr_ws/aris_team5/Aris_Team5/src/store_package/ui"
@@ -30,29 +30,41 @@ mainClass = uic.loadUiType(mainUi)[0]
 robotClass = uic.loadUiType(robotUi)[0]
 dailySalesClass = uic.loadUiType(dailySalesUi)[0]
 
-class StoreNode(Node):
-    def __init__(self, ros2Handler):
+class StoreNode(Node, QObject):
+    dailyTotalSales = pyqtSignal(object)
+    monthTotalSales = pyqtSignal(object)
+    stocks = pyqtSignal(object)
+    dailySales = pyqtSignal(object)
+
+    def __init__(self):
         super().__init__("store_node")
-        self.ros2Handler = ros2Handler
+        QObject.__init__(self)
         self.initNode()
             
     def initNode(self):
         self.get_logger().info("Store node started")
+        # time.sleep(0.5)  # Wait for 2 seconds to ensure all services are up
         self.initClients()
-        # self. waitService()
+        self. waitService()
 
     def initClients(self):
         self.dailyTotalSalesClient = self.create_client(DailyTotalSales, 'dailyTotalSales')
+        self.monthTotalSalesClient = self.create_client(MonthTotalSales, 'monthTotalSales')
         self.stocksClient = self.create_client(Stocks, 'stocks')
         self.modifyStocksClient = self.create_client(ModifyStocks, 'modifyStocks')
+        self.dailySalesClient = self.create_client(DailySales, "dailySales")
 
-    # def waitService(self):
-        # while not self.dailyTotalSalesClient.wait_for_service(timeout_sec=1.0):
-        #     self.get_logger().info('Service not available, waiting again...')
-        # while not self.stocksClient.wait_for_service(timeout_sec=1.0):
-        #     self.get_logger().info('Stocks service not available, waiting again...')
-        # while not self.modifyStocksClient.wait_for_service(timeout_sec=1.0):
-        #     self.get_logger().info('Modify Stocks service not available, waiting again...')
+    def waitService(self):
+        while not self.dailyTotalSalesClient.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Daily total sales service not available, waiting again...')
+        while not self.monthTotalSalesClient.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Month total sales service not available, waiting again...')
+        while not self.stocksClient.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Stocks service not available, waiting again...')
+        while not self.modifyStocksClient.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Modify Stocks service not available, waiting again...')
+        while not self.dailySalesClient.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Daily sales service not available, waiting again...')
 
     def requestDailyTotalSales(self, year, month):
         request = DailyTotalSales.Request()
@@ -68,7 +80,23 @@ class StoreNode(Node):
         try:
             response = future.result()
             self.get_logger().info(f"Received response from dailyTotalSalesService")
-            self.ros2Handler.dailyTotalSales.emit(response.data)
+            self.dailyTotalSales.emit(response.data)
+        except Exception as e:
+            self.get_logger().error(f"Service call failed: {e}")
+
+    def requestMonthTotalSales(self, year, month):
+        request = MonthTotalSales.Request()
+        request.year = year
+        request.month = month
+
+        future = self.monthTotalSalesClient.call_async(request)
+        future.add_done_callback(self.monthTotalSalesCallback)
+    
+    def monthTotalSalesCallback(self, future):
+        try:
+            response = future.result()
+            self.get_logger().info(f"Received response from monthTotalSalesService")
+            self.monthTotalSales.emit(response.total_sales)
         except Exception as e:
             self.get_logger().error(f"Service call failed: {e}")
 
@@ -93,7 +121,7 @@ class StoreNode(Node):
             for item in response.stocks.topping:
                 self.get_logger().info(f"Name: {item.name}, Stock: {item.stock}")
             
-            self.ros2Handler.stocks.emit(response.stocks)
+            self.stocks.emit(response.stocks)
         except Exception as e:
             self.get_logger().error(f"Service call failed: {e}")
 
@@ -117,26 +145,22 @@ class StoreNode(Node):
         except Exception as e:
             self.get_logger().error(f"Modify Stocks service call failed: {e}")
 
-class Ros2Handler(QObject):
-    dailyTotalSales = pyqtSignal(object)
-    monthlyTotalSales = pyqtSignal(object)
-    stocks = pyqtSignal(object)
+    def requestDailySales(self, year, month, day):
+        request = DailySales.Request()
+        request.year = year
+        request.month = month
+        request.day = day
 
-    def __init__(self):
-        super().__init__()
-
-    # @pyqtSlot(object)
-    # def handleDailyTotalSales(self, data):
-    #     print(f"Daily total sales data received: {data}")
-
-    # @pyqtSlot(object)
-    # def handleMonthlyTotalSales(self, data):
-    #     print(f"Monthly total sales data received: {data}")
-
-    # @pyqtSlot(object)
-    # def handleStocks(self, data):
-    #     print(f"Stock data received: {data}")
-
+        future = self.dailySalesClient.call_async(request)
+        future.add_done_callback(self.dailySalesCallback)
+    
+    def dailySalesCallback(self, future):
+        try:
+            response = future.result()
+            self.get_logger().info(f"Received response from dailySalesService")
+            self.dailySales.emit(response.data)
+        except Exception as e:
+            self.get_logger().error(f"Service call failed: {e}")
 
 class Calendar(QCalendarWidget):
     dateClicked = pyqtSignal(QDate)
@@ -147,7 +171,7 @@ class Calendar(QCalendarWidget):
         self.initWindow()
 
     def initWindow(self):
-        self.clicked.connect(self.handleClick)
+        self.clicked.connect(self.selectDate)
 
     def setDailyTotalSales(self, salesRecords):
         self.salesRecords = salesRecords
@@ -164,15 +188,14 @@ class Calendar(QCalendarWidget):
             painter.drawText(textRect, Qt.AlignCenter, self.salesRecords[date])
             painter.restore()
     
-    def handleClick(self):
+    def selectDate(self):
         selectedDate = self.selectedDate()
         self.dateClicked.emit(selectedDate) 
 
 class LoginPage(QDialog, loginClass):
-    def __init__(self, ros2Handler):
+    def __init__(self):
         super().__init__()
         self.initWindow()        
-        self.ros2Handler = ros2Handler
         self.setHostAddress()
 
 
@@ -196,21 +219,21 @@ class LoginPage(QDialog, loginClass):
         os.environ['ROS_DOMAIN_ID'] = str(domainID)
         
         rp.init()
-        self.storeNode = StoreNode(self.ros2Handler)
+        self.storeNode = StoreNode()
         self.storeNodeThread = threading.Thread(target=rp.spin, args=(self.storeNode,))
         self.storeNodeThread.start()
     
-        self.mainWindow = MainPage(self.storeNode, self.ros2Handler)
+        self.mainWindow = MainPage(self.storeNode)
         self.mainWindow.show()
         self.close()
 
 class MainPage(QMainWindow, mainClass):
-    def __init__(self, storeNode, ros2Handler):
+    def __init__(self, storeNode):
         super().__init__()
         self.setupUi(self)
         self.setWindowTitle("Main")
         self.storeNode = storeNode
-        self.ros2Handler = ros2Handler
+
         self.initWindow()
 
     def initWindow(self):
@@ -219,22 +242,20 @@ class MainPage(QMainWindow, mainClass):
         self.robotManageBtn.clicked.connect(self.showRobotManagePage)
         self.modifyBtn.clicked.connect(self.modifyBtnClicked)
         self.handelqtSignal()
-        # self.updateData()        
-        year = str(self.calendarWidget.yearShown())
-        month = str(self.calendarWidget.monthShown())
-        self.storeNode.requestDailyTotalSales(year, month)
-        self.storeNode.requestStocks()
+        self.updateData()       
+
 
     def handelqtSignal(self):
-        self.ros2Handler.dailyTotalSales.connect(self.updateDailyTotalSales)
-        self.ros2Handler.stocks.connect(self.updateStocks)
+        self.storeNode.dailyTotalSales.connect(self.updateDailyTotalSales)
+        self.storeNode.monthTotalSales.connect(self.updateMonthTotalSales)
+        self.storeNode.stocks.connect(self.updateStocks)
+        self.calendarWidget.dateClicked.connect(self.showDailySalesPage)
 
     def initializeCalendar(self):
         self.calendarContainer = self.findChild(QWidget, "calendarContainer")  # 디자이너에서 설정한 이름 사용
         self.calendarLayout = QVBoxLayout(self.calendarContainer)
         self.calendarWidget = Calendar(self.calendarContainer)
         self.calendarLayout.addWidget(self.calendarWidget)
-        self.calendarWidget.dateClicked.connect(self.showDailySalesPage)
 
     def setSpinBoxesEnabled(self, enabled):
         spinBoxes = [
@@ -250,26 +271,20 @@ class MainPage(QMainWindow, mainClass):
             spinBox.setEnabled(enabled)
 
     def updateData(self):
-        pass
-        # self.updateDailyTotalSales()
-        # self.updateStock()
-        # self.updateMonthTotalSales()
-    
-    def closeEvent(self, event):
-        event.accept()  # 창을 닫음
-
-    def updateMonthTotalSales(self):
         year = str(self.calendarWidget.yearShown())
         month = str(self.calendarWidget.monthShown())
-        # self.storeNode.requestDailyTotalSales(year, month)
-        # result = self.dbManager.getMonthTotalSales(year, month)
-        # monthTotalSales = result[0][0]
-        # self.totalSalesLine.setText(f"{monthTotalSales:,}원")
-        # self.totalSalesLine.setAlignment(Qt.AlignRight)
+        self.storeNode.requestDailyTotalSales(year, month)
+        self.storeNode.requestMonthTotalSales(year, month)
+        self.storeNode.requestStocks()
+    
+    def closeEvent(self, event):
+        self.storeNode.destroy_node()
+        rp.shutdown()
+        event.accept()  # 창을 닫음
 
     @pyqtSlot(object)
     def updateDailyTotalSales(self, data):
-        print(f"Updated Daily Total Sales: {data}")
+        self.storeNode.get_logger().info(f"Updated Daily Total Sales: {data}")
         salesRecords = {}
         for record in data:
             date_str, total_sales = record.split(',')
@@ -277,6 +292,12 @@ class MainPage(QMainWindow, mainClass):
             salesRecords[date] = f"{int(total_sales):,}원"
 
         self.calendarWidget.setDailyTotalSales(salesRecords)
+
+    @pyqtSlot(object)
+    def updateMonthTotalSales(self,data):
+        self.storeNode.get_logger().info(f"Updated Monthly Total Sales: {data}")
+        self.totalSalesLine.setText(f"{data:,}원")
+        self.totalSalesLine.setAlignment(Qt.AlignRight)
 
     @pyqtSlot(object)
     def updateStocks(self, data):
@@ -300,24 +321,6 @@ class MainPage(QMainWindow, mainClass):
         for item in data.topping:
             if item.name in spinBoxMapping:
                 spinBoxMapping[item.name].setValue(item.stock)
-    
-        # for row_data in data:
-        #     item_name = row_data[0]
-        #     item_stock = row_data[1]
-        #     if item_name == "딸기":
-        #         self.strawberrySpinBox.setValue(item_stock)
-        #     elif item_name == "바나나":
-        #         self.bananaSpinBox.setValue(item_stock)
-        #     elif item_name == "초코":
-        #         self.chocolateSpinBox.setValue(item_stock)
-        #     elif item_name == "아포가토":
-        #         self.affogatoSpinBox.setValue(item_stock)
-        #     elif item_name == "토핑A":
-        #         self.toppingASpinBox.setValue(item_stock)
-        #     elif item_name == "토핑B":
-        #         self.toppingBSpinBox.setValue(item_stock)
-        #     elif item_name == "토핑C":
-        #         self.toppingCSpinBox.setValue(item_stock)
 
     def modifyBtnClicked(self):
         text = self.modifyBtn.text()
@@ -326,7 +329,7 @@ class MainPage(QMainWindow, mainClass):
             self.modifyBtn.setText("저장")
         elif text == "저장":
             self.modifyStock()
-            self.setSpinBoxesEnabled(True)
+            self.setSpinBoxesEnabled(False)
             self.modifyBtn.setText("수정")
     
     def modifyStock(self):
@@ -350,8 +353,9 @@ class MainPage(QMainWindow, mainClass):
         ]
         self.storeNode.requestModifyStocks(menuData, toppingData)
 
+    @pyqtSlot(QDate)
     def showDailySalesPage(self, date):
-    #     self.dailySalesWindow = DailySalesPage(self.dbManager, date)
+        self.dailySalesWindow = DailySalesPage(self.storeNode, date)
         self.dailySalesWindow.show()
 
     def showRobotManagePage(self):
@@ -363,6 +367,9 @@ class DailySalesPage(QDialog, dailySalesClass):
         self.setupUi(self)
         self.setWindowTitle("Daily Sales")
         self.date = date
+        self.year = date.year()
+        self.month = date.month()
+        self.day = date.day()
         self.storeNode = storeNode
         self.initWindow()
     
@@ -374,18 +381,40 @@ class DailySalesPage(QDialog, dailySalesClass):
         self.dailySalesTable.verticalHeader().setVisible(False) #일별 판매 기록 테이블의 왼쪽의 번호 비활성화
         self.showDailySales() # 처음에 일별 판매 기록 테이블이 보이게 설정
         self.updateSelectedDateLabel(self.date)
+        self.handelqtSignal()
+        self.updateData()
 
+    def updateData(self):
+        self.storeNode.requestDailySales(self.year, self.month, self.day)
+
+    def handelqtSignal(self):
+        self.storeNode.dailySales.connect(self.updateTable)
+       
     def updateSelectedDateLabel(self, date):
         self.dateLabel.setText(date.toString('yyyy년 MM월 dd일'))
 
+    @pyqtSlot(object)
     def updateTable(self, data):
         self.dailySalesTable.setRowCount(len(data))
-        totalSales = sum(row_data[5] for row_data in data)
-        for row_num, row_data in enumerate(data):
-            for col_num, item in enumerate(row_data):
-                table_item = QTableWidgetItem(str(item))
-                table_item.setTextAlignment(Qt.AlignCenter)  # 가운데 정렬
+        totalSales = 0
+
+        for row_num, order_info in enumerate(data):
+            items = [
+                str(order_info.order_id),
+                order_info.order_time,
+                order_info.menu,
+                order_info.topping,
+                f"{order_info.quantity}개",
+                f"{order_info.price}원"
+            ]
+
+            totalSales += order_info.price 
+
+            for col_num, item in enumerate(items):
+                table_item = QTableWidgetItem(item)
+                table_item.setTextAlignment(Qt.AlignCenter)
                 self.dailySalesTable.setItem(row_num, col_num, table_item)
+
         self.updateTotalSales(totalSales)
 
     def updateTotalSales(self, totalSales):
@@ -499,9 +528,9 @@ class RobotManagePage(QDialog, robotClass):
 def main(args=None):
     app = QApplication(sys.argv)
     
-    ros2Handler = Ros2Handler()
 
-    loginWindow = LoginPage(ros2Handler)
+
+    loginWindow = LoginPage()
     loginWindow.show()
 
     try:

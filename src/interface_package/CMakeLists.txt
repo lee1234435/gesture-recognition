@@ -17,10 +17,12 @@ find_package(ament_lint_auto REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/StockInfo.msg"
   "msg/StocksArray.msg"
+  "msg/OrderInfo.msg"
   "srv/Stocks.srv"
   "srv/ModifyStocks.srv"
   "srv/DailySales.srv"
   "srv/DailyTotalSales.srv"
+  "srv/MonthTotalSales.srv"
 )
 
 
