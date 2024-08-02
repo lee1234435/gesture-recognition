@@ -1,4 +1,0 @@
-string year
-string month
----
-int64 total_sales
